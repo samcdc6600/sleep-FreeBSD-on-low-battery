@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 
 
 ################################################################################
@@ -157,10 +157,7 @@ setDialogueDisplayed()
 
 
 main()
-{
-    CURRENT_CHARGING_STATUS="0"
-    BATTERY_LEVEL="7"
-    
+{   
     local SLEEP_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepDialogueDisplayed"
     local WARNING_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepWarningDialogueDisplay\
 ed"
