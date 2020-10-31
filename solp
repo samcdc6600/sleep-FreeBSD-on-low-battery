@@ -82,7 +82,7 @@ ${1}" | $BC_PROG`;
 
 
 zzzSleep()
-{		       # Lock the computer and put it to sleep.
+{	# Lock the computer and put it to sleep.
     #    /home/magenta/.config/i3/configdir/lock.sh
     echo sleeping
 }
@@ -90,28 +90,40 @@ zzzSleep()
 
 setDialogueDisplayed()
 {	# The following arguments should be passed
-    # "DIALOGUE_DISPLAYED_INFO_DIR".
-    if [ $BATTERY_LEVEL -le $DIALOGUE_THRESHOLD ]
-    then
-	if [ -f "${1}" ]
-	then
-	    $TOUCH_PROG $DIALOGUE_DISPLAYED_INFO_DIR
+    # "dialogue displayed info dir" and "dialogue threshold", where dialogue
+    # displayed info dir is the directory of the sentinal file that will
+    # indicate wheather or not a dialogue box should possibly be displayed, and
+    # dialogue threshold is the battery level at which the dialouge should be
+    # displayed.
+    if [ $BATTERY_LEVEL -le $2 ]
+    then			# If the battery level is less than.
+	if [ \( ! -f "${1}" \) -a \( $CURRENT_CARGING_STATUS -eq $CARGING_OFF \) ]
+	then			# If the file doesn't exist create it.
+	    echo "File Created ${1}"
+	    $TOUCH_PROG $1
 	fi
-    else
-	$RM_PROG $DIALOGUE_DISPLAYED_INFO_DIR
+    else			# If the battery level is greater than.
+	if [ \( -f "${1}" \) -o \( $CURRENT_CARGING_STATUS -ne $CARGING_OFF \) ]
+	then			# If it does exist remove it.
+	    echo "File removed ${1}"
+	    $RM_PROG $1
+	fi
     fi
 }
 
 
 dialogueDisplayed()
 {	# The following arguments should be passed
-    # "DIALOGUE_DISPLAYED_INFO_DIR".
-#    local WARNING_DISPLAYED_INFO_DIR="/tmp/sleepWarningDisplayedInfo"
+    # "dialogue displayed info dir", where dialogue displayed info dir is the
+    # directory of the sentinal file that will indicate wheather or not a
+    # dialogue box should possibly be displayed.
     if [ -f "${1}" ]
     then
 	RET=$TRUE
+#	echo "file exists"
     else
 	RET=$FALSE
+#	echo "file doesn't exist"
     fi
     $ECHO_PROG $RET
 }
@@ -124,8 +136,7 @@ handel()
     
     if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ]
     then			# We are on battery power.
-	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ] && \
-	       [ dialogueDisplayed $SLEEP_DIALOGUE_DISPLAYED_INFO_DIR ]
+	if [ \( $BATTERY_LEVEL -le $SLEEP_THRESHOLD \) -a \( `dialogueDisplayed "${SLEEP_DIALOGUE_DISPLAYED_INFO_DIR}"` -eq $FALSE \) ]
 	then			# The battery level is below $SLEEP_THRESHOLD.
 	    local SLEEP_INTERVAL="0.6"
 	    local SLEEP_MESSAGE="# Battery at or below (${BATTERY_LEVEL}%). \
@@ -138,8 +149,7 @@ Computer will sleep in "
 		zzzSleep
 	    fi
 	else
-	    if [ $BATTERY_LEVEL -le $WARNING_THRESHOLD ]
-	       [ dialogueDisplayed $WARNING_DIALOGUE_DISPLAYED_INFO_DIR ]
+	    if [ \( $BATTERY_LEVEL -le $WARNING_THRESHOLD \) -a \( `dialogueDisplayed "${WARNING_DIALOGUE_DISPLAYED_INFO_DIR}"` -eq $FALSE \) ]
 	    then		# The battery level is above $SLEEP_THRESHOLD
 		# but below $WARNING_THRESHOLD.
 		local WINDOW_TITLE="Warning Low Battery (${BATTERY_LEVEL}%)"
@@ -155,8 +165,8 @@ battery level is at or below ${SLEEP_THRESHOLD}%!"
 
     # Recorde whether or to dialogues have already been displayed since entering
     # the relevant battery percentages.
-    setDialogueDisplayed $SLEEP_DIALOGUE_DISPLAYED_INFO_DIR
-    setDialogueDisplayed $WARNING_DIALOGUE_DISPLAYED_INFO_DIR
+    setDialogueDisplayed $SLEEP_DIALOGUE_DISPLAYED_INFO_DIR $SLEEP_THRESHOLD
+    setDialogueDisplayed $WARNING_DIALOGUE_DISPLAYED_INFO_DIR $WARNING_THRESHOLD
 }
 
 
