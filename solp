@@ -27,12 +27,16 @@ ZENITY_PROG="/usr/local/bin/zenity"
 ECHO_PROG="/bin/echo"
 BC_PROG="/usr/bin/bc"
 SLEEP_PROG="/bin/sleep"
+TOUCH_PROG="/usr/bin/touch"
+RM_PROG="/bin/rm"
 
 
 ################################### Constants ##################################
 ################################################################################
-WARNING_THRESHOLD=12
-SLEEP_THRESHOLD=7
+TRUE="1"
+FALSE="0"
+WARNING_THRESHOLD="12"
+SLEEP_THRESHOLD="7"
 CURRENT_CARGING_STATUS=`${SYSCTL_PROG} -n hw.acpi.acline`
 CARGING_OFF="0"			# 1 if machine is charging 0 if not.
 BATTERY_LEVEL=`${SYSCTL_PROG} -n hw.acpi.battery.life`
@@ -84,11 +88,44 @@ zzzSleep()
 }
 
 
+setDialogueDisplayed()
+{	# The following arguments should be passed
+    # "DIALOGUE_DISPLAYED_INFO_DIR".
+    if [ $BATTERY_LEVEL -le $DIALOGUE_THRESHOLD ]
+    then
+	if [ -f "${1}" ]
+	then
+	    $TOUCH_PROG $DIALOGUE_DISPLAYED_INFO_DIR
+	fi
+    else
+	$RM_PROG $DIALOGUE_DISPLAYED_INFO_DIR
+    fi
+}
+
+
+dialogueDisplayed()
+{	# The following arguments should be passed
+    # "DIALOGUE_DISPLAYED_INFO_DIR".
+#    local WARNING_DISPLAYED_INFO_DIR="/tmp/sleepWarningDisplayedInfo"
+    if [ -f "${1}" ]
+    then
+	RET=$TRUE
+    else
+	RET=$FALSE
+    fi
+    $ECHO_PROG $RET
+}
+
+
 handel()
-{   
+{
+    local SLEEP_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepDialogueDisplayed"
+    local WARNING_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepWarningDialogueDisplayed"
+    
     if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ]
     then			# We are on battery power.
-	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ]
+	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ] && \
+	       [ dialogueDisplayed $SLEEP_DIALOGUE_DISPLAYED_INFO_DIR ]
 	then			# The battery level is below $SLEEP_THRESHOLD.
 	    local SLEEP_INTERVAL="0.6"
 	    local SLEEP_MESSAGE="# Battery at or below (${BATTERY_LEVEL}%). \
@@ -102,6 +139,7 @@ Computer will sleep in "
 	    fi
 	else
 	    if [ $BATTERY_LEVEL -le $WARNING_THRESHOLD ]
+	       [ dialogueDisplayed $WARNING_DIALOGUE_DISPLAYED_INFO_DIR ]
 	    then		# The battery level is above $SLEEP_THRESHOLD
 		# but below $WARNING_THRESHOLD.
 		local WINDOW_TITLE="Warning Low Battery (${BATTERY_LEVEL}%)"
@@ -114,6 +152,11 @@ battery level is at or below ${SLEEP_THRESHOLD}%!"
 	    fi
 	fi
     fi
+
+    # Recorde whether or to dialogues have already been displayed since entering
+    # the relevant battery percentages.
+    setDialogueDisplayed $SLEEP_DIALOGUE_DISPLAYED_INFO_DIR
+    setDialogueDisplayed $WARNING_DIALOGUE_DISPLAYED_INFO_DIR
 }
 
 
