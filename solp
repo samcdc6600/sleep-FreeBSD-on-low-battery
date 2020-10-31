@@ -16,44 +16,29 @@
 ###					level is below some certain	     ###
 ###					percentage independent of the	     ###
 ###					previously mentioned percentage.     ###
-###	Description of prog operation:  Execution starts in main. A check
-###					is made to see If we are currently
-###					charging. If we are not then a check
-###					check is done to see if the battery
-###					is below the sleep threshold and
-###					also if the sleep dialogue has
-###					already been displayed. If this
-###					check passes then a sleep countdown
-###					dialogue opens and a script to lock
-###					and put the computer to sleep is
-###					run after it completes (unless the
-###					charging status has changed.) If the
-###					battery is not below the sleep
-###					threshold then a check is made to
-###					see if it is below the warning
-###					threshold and also if the warning
-###					dialogue has already been displayed.
-###					If this check passes then a warning
-###					dialogue is displayed to tell the
-###					user that the battery is getting
-###					low. Finally at the end of main the
-###					setDialogueDisplayed function is run
-###					for the sleep threshold dialogue and
-###					then again for the warning threshold.
-###					The setDialogueDisplayed function
-###					creates a file if it's second
-###					argument is less then or equal to
-###					$BATTERY_LEVEL, the file $1 doesn't
-###					already exist and the machine is not
-###					charging. If it's second argument is
-###					above $BATTERY_LEVEL, the file does
-###					exist and it is charging then it
-###					will delete it. This program is
-###					intened to be run as a cron job and
-###					through the file creation and
-###					deletion mechanism just descriped it
-###					will know not to show a dialogue box
-###					if it has already done so.	
+###	Description of prog operation:  Execution starts in main. A check    ###
+###					is made to see If we are currently   ###
+###     charging. If we are not then a check check is done to see if the     ###
+###	battery is equal to or below the sleep threshold and also if the     ###
+###	sleep dialogue has already been displayed. If this check passes then ###
+###     alarm sound one and two are played, a sleep countdown dialogue opens ###
+###     and a script to lock and put the computer to sleep is run after the  ###
+###     dialogue completes (unless the charging status has changed to	     ###
+###     charging.) If the battery is not equal to or below the sleep   	     ###
+###     threshold then a check is made to see if it is equal to or below the ###
+###     warning threshold and also if the warning dialogue has already been  ###
+###     displayed. If this check passes then alarm sound one is played and a ###
+###	warning dialogue is displayed to tell the user that the battery is   ###
+###	getting low. Finally at the end of main the setDialogueDisplayed     ###
+###     function is run for the sleep threshold dialogue and then again for  ###
+###     the warning threshold. The setDialogueDisplayed function creates a   ###
+###	file if it's second argument is less then or equal to 		     ###
+###     $BATTERY_LEVEL, the file $1 doesn't already  exist and the machine   ###
+###     is not charging. If it's second argument is above $BATTERY_LEVEL,    ###
+###     the file does exist and it is charging then it will delete it. This  ###
+###     program is intened to be run as a cron job and through the file	     ###
+###     creation and deletion mechanism just descriped it will know not to   ###
+###     show a dialogue box if it has already done so.			     ###
 ###									     ###
 ################################################################################
 ################################################################################
@@ -177,13 +162,16 @@ main()
     BATTERY_LEVEL="7"
     
     local SLEEP_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepDialogueDisplayed"
-    local WARNING_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepWarningDialogueDisplayed"
+    local WARNING_DIALOGUE_DISPLAYED_INFO_DIR="/tmp/sleepWarningDialogueDisplay\
+ed"
     
     if [ $CURRENT_CHARGING_STATUS -eq $CARGING_OFF ]
     then			# We are on battery power.
 	# UI alert sound dirs (one is light harted and two is ominous!).
-	local ALERT_SOUND_ONE="${HOME}/.uiSoundResources/541560__sieuamthanh__chuong-6e.wav"
-	local ALERT_SOUND_TWO="${HOME}/.uiSoundResources/541605__erokia__msfxp9-49-one-shot.wav"
+	local ALERT_SOUND_ONE="${HOME}/.uiSoundResources/541560__sieuamthanh__c\
+huong-6e.wav"
+	local ALERT_SOUND_TWO="${HOME}/.uiSoundResources/541605__erokia__msfxp9\
+-49-one-shot.wav"
 	
 	if [ \( $BATTERY_LEVEL -le $SLEEP_THRESHOLD \) -a \( `dialogueDisplayed "${SLEEP_DIALOGUE_DISPLAYED_INFO_DIR}"` -eq $FALSE \) ]
 	then			# The battery level is below $SLEEP_THRESHOLD.
