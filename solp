@@ -39,59 +39,78 @@ BATTERY_LEVEL=`${SYSCTL_PROG} -n hw.acpi.battery.life`
 
 
 displayWarningMessage()
-{
-
-    
+{	# The following arguments should be passed "window title" and
+    # "warning message"
     $ZENITY_PROG --warning --title "${1}" --width 300 --text \
 		 "${2}"
 }
 
 
-handel()
-{
-    local WINDOW_TITLE="Low Battery"
-    local SLEEP_MESSAGE="It has been detected that your machines batterry level is \
-${BATTERY_LEVEL}% which is at or below ${WARNING_THRESHOLD}%! The machine will \
-automatically be put to sleep when it is detected that the battery level is at \
-or below ${SLEEP_THRESHOLD}%!"
-    local WARNING_MESSAGE="It has been detected that your machines batterry level is \
-${BATTERY_LEVEL}% which is at or below ${WARNING_THRESHOLD}%! The machine will \
-automatically be put to sleep when it is detected that the battery level is at \
-or below ${SLEEP_THRESHOLD}%!"
-
-
-    local SLEEP_INTERVAL="0.6"
+cowntdown()
+{	# The following arguments should be passed "sleep interval",
+    # "sleep message" and "window title" their order should be as seen here.
+    # Where sleep interval is the time spent sleeping between status bar updates
+    # (for example if sleep interval was 0.6 then the status bar would take one
+    # minute to complete as 0.6*100 = 60).
     local STATUS_BAR_MIN="0"
     local STATUS_BAR_MAX="100"
     
-    (for iter in $(seq $STATUS_BAR_MIN $STATUS_BAR_MAX);
+    (for iter in $(seq $STATUS_BAR_MIN $STATUS_BAR_MAX)
      do
 	 local timeLeft=`$ECHO_PROG "( ${STATUS_BAR_MAX} - ${iter} ) * \
-${SLEEP_INTERVAL}" | $BC_PROG`;
+${1}" | $BC_PROG`;
+
+	 # Check charging status and return if charging.
+	 if [ `${SYSCTL_PROG} -n hw.acpi.acline` -ne $CARGING_OFF ]
+	 then			# We are now charging
+	     break
+	 fi
 	 
-	 $ECHO_PROG "# Computer will sleep in ${timeLeft}s";
+	 $ECHO_PROG "${2}${timeLeft}s"
 	 $ECHO_PROG "${iter}"
-	 
-	 $SLEEP_PROG $SLEEP_INTERVAL
-     done) | zenity --progress --title "WARNING LOW BATTERY (${BATTERY_LEVEL}%)" --auto-close --no-cancel
-    
-#    echo `for i in 1 2 3 4 5; do echo $i; sleep 1; done` | zenity --progress --title "How-To Geek" -- auto-close
+	 $SLEEP_PROG "${1}"
+     done) | zenity --progress --title "${3}" --auto-close --no-cancel
 
-    # for i in 1 2 3 4 5;
-    # do
-    # 	echo $i
-    # done
+    # Reset CURRENT_CARGING_STATUS as it may have changed. This should be
+    # checked for after this function is run.
+    CURRENT_CARGING_STATUS=`${SYSCTL_PROG} -n hw.acpi.acline`
+}
 
-    
-    if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ];
-    then
-	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ];
-	then
-	    displayWarningMessage "${WINDOW_TITLE}" "${SLEEP_MESSAGE}"
+
+zzzSleep()
+{		       # Lock the computer and put it to sleep.
+    #    /home/magenta/.config/i3/configdir/lock.sh
+    echo sleeping
+}
+
+
+handel()
+{   
+    if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ]
+    then			# We are on battery power.
+	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ]
+	then			# The battery level is below $SLEEP_THRESHOLD.
+	    local SLEEP_INTERVAL="0.6"
+	    local SLEEP_MESSAGE="# Battery at or below (${BATTERY_LEVEL}%). \
+Computer will sleep in "
+	    local WINDOW_TITLE="WARNING LOW BATTERY (${BATTERY_LEVEL}%)"
+	    
+	    cowntdown "${SLEEP_INTERVAL}" "${SLEEP_MESSAGE}" "${WINDOW_TITLE}"
+	    if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ]
+	    then		# We are still not charging.
+		zzzSleep
+	    fi
 	else
-	    if [ $BATTERY_LEVEL -le $WARNING_THRESHOLD ];
-	    then
-		displayWarningMessage "${WINDOW_TITLE}" "${WARNING_MESSAGE}"
+	    if [ $BATTERY_LEVEL -le $WARNING_THRESHOLD ]
+	    then		# The battery level is above $SLEEP_THRESHOLD
+		# but below $WARNING_THRESHOLD.
+		local WINDOW_TITLE="Warning Low Battery (${BATTERY_LEVEL}%)"
+		local WARNING_MESSAGE="It has been detected that your machines \
+batterry level is ${BATTERY_LEVEL}% which is at or below ${WARNING_THRESHOLD}%!\
+ The machine will automatically be put to sleep when it is detected that the \
+battery level is at or below ${SLEEP_THRESHOLD}%!"
+
+	    	displayWarningMessage "${WINDOW_TITLE}" "${WARNING_MESSAGE}"
 	    fi
 	fi
     fi
@@ -100,9 +119,7 @@ ${SLEEP_INTERVAL}" | $BC_PROG`;
 
 main()
 {
-    echo $CURRENT_CARGING_STATUS
-    CURRENT_CARGING_STATUS="0"
-    BATTERY_LEVEL="10"
+    BATTERY_LEVEL="8"
 
     handel
 }
