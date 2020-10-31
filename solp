@@ -1,0 +1,111 @@
+#!/bin/sh
+
+
+################################################################################
+################################################################################
+###	Program Name:			Sleep On Low Power		     ###
+###	File:				solp				     ###
+###	Author:				Samual G Brown			     ###
+###	Date of Creation:		31/10/2020			     ###
+###	Late Modified:			31/10/2020			     ###
+###	Purpos:				To warn the user when the machines   ###
+###					batter level is below some certain   ###
+###					percentage and to put the machine    ###
+###					to sleep if the machines batter      ###
+###					level is below some certain	     ###
+###					percentage independent of the	     ###
+###					previously mentioned percentage.     ###
+###	Description of prog operation:
+################################################################################
+################################################################################
+
+
+################################# Program paths ################################
+################################################################################
+SYSCTL_PROG="/sbin/sysctl"
+ZENITY_PROG="/usr/local/bin/zenity"
+ECHO_PROG="/bin/echo"
+BC_PROG="/usr/bin/bc"
+SLEEP_PROG="/bin/sleep"
+
+
+################################### Constants ##################################
+################################################################################
+WARNING_THRESHOLD=12
+SLEEP_THRESHOLD=7
+CURRENT_CARGING_STATUS=`${SYSCTL_PROG} -n hw.acpi.acline`
+CARGING_OFF="0"			# 1 if machine is charging 0 if not.
+BATTERY_LEVEL=`${SYSCTL_PROG} -n hw.acpi.battery.life`
+
+
+displayWarningMessage()
+{
+
+    
+    $ZENITY_PROG --warning --title "${1}" --width 300 --text \
+		 "${2}"
+}
+
+
+handel()
+{
+    local WINDOW_TITLE="Low Battery"
+    local SLEEP_MESSAGE="It has been detected that your machines batterry level is \
+${BATTERY_LEVEL}% which is at or below ${WARNING_THRESHOLD}%! The machine will \
+automatically be put to sleep when it is detected that the battery level is at \
+or below ${SLEEP_THRESHOLD}%!"
+    local WARNING_MESSAGE="It has been detected that your machines batterry level is \
+${BATTERY_LEVEL}% which is at or below ${WARNING_THRESHOLD}%! The machine will \
+automatically be put to sleep when it is detected that the battery level is at \
+or below ${SLEEP_THRESHOLD}%!"
+
+
+    local SLEEP_INTERVAL="0.6"
+    local STATUS_BAR_MIN="0"
+    local STATUS_BAR_MAX="100"
+    
+    (for iter in $(seq $STATUS_BAR_MIN $STATUS_BAR_MAX);
+     do
+	 local timeLeft=`$ECHO_PROG "( ${STATUS_BAR_MAX} - ${iter} ) * \
+${SLEEP_INTERVAL}" | $BC_PROG`;
+	 
+	 $ECHO_PROG "# Computer will sleep in ${timeLeft}s";
+	 $ECHO_PROG "${iter}"
+	 
+	 $SLEEP_PROG $SLEEP_INTERVAL
+     done) | zenity --progress --title "WARNING LOW BATTERY (${BATTERY_LEVEL}%)" --auto-close --no-cancel
+    
+#    echo `for i in 1 2 3 4 5; do echo $i; sleep 1; done` | zenity --progress --title "How-To Geek" -- auto-close
+
+    # for i in 1 2 3 4 5;
+    # do
+    # 	echo $i
+    # done
+
+    
+    if [ $CURRENT_CARGING_STATUS -eq $CARGING_OFF ];
+    then
+	if [ $BATTERY_LEVEL -le $SLEEP_THRESHOLD ];
+	then
+	    displayWarningMessage "${WINDOW_TITLE}" "${SLEEP_MESSAGE}"
+	else
+	    if [ $BATTERY_LEVEL -le $WARNING_THRESHOLD ];
+	    then
+		displayWarningMessage "${WINDOW_TITLE}" "${WARNING_MESSAGE}"
+	    fi
+	fi
+    fi
+}
+
+
+main()
+{
+    echo $CURRENT_CARGING_STATUS
+    CURRENT_CARGING_STATUS="0"
+    BATTERY_LEVEL="10"
+
+    handel
+}
+
+
+main
