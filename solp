@@ -202,10 +202,6 @@ battery level is at or below ${SLEEP_THRESHOLD}%!"
 			     $WARNING_THRESHOLD
 
 	$SLEEP_PROG "${UPDATE_RATE}"
-
-	echo "${CURRENT_CHARGING_STATUS}"
-	echo "${BATTERY_LEVEL}"
-
     done
 }
 
