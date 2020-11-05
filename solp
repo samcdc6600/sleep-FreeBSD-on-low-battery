@@ -40,9 +40,9 @@ MPV_PROG="/usr/local/bin/mpv"
 TRUE="1"
 FALSE="0"
 WARNING_THRESHOLD="15"
-SLEEP_THRESHOLD="15"
+SLEEP_THRESHOLD="8"
 CARGING_OFF="0"			# 1 if machine is charging 0 if not.
-UPDATE_RATE="8"		# Check status every $UPDATE_RATE seconds
+UPDATE_RATE="7"		# Check status every $UPDATE_RATE seconds
 CURRENT_CHARGING_STATUS=$($SYSCTL_PROG -n hw.acpi.acline)
 BATTERY_LEVEL=$($SYSCTL_PROG -n hw.acpi.battery.life)
 
