@@ -42,7 +42,7 @@ FALSE="0"
 WARNING_THRESHOLD="15"
 SLEEP_THRESHOLD="8"
 CARGING_OFF="0"			# 1 if machine is charging 0 if not.
-UPDATE_RATE="7"		# Check status every $UPDATE_RATE seconds
+UPDATE_RATE="30"		# Check status every $UPDATE_RATE seconds
 CURRENT_CHARGING_STATUS=$($SYSCTL_PROG -n hw.acpi.acline)
 BATTERY_LEVEL=$($SYSCTL_PROG -n hw.acpi.battery.life)
 
@@ -112,7 +112,7 @@ displayWarningMessage()
 {	# The following arguments should be passed "window title" and
     # "warning message"
     $ZENITY_PROG --warning --title "${1}" --width 300 --text \
-		 "${2}" --display=:0.0
+		 "${2}" --display=:0.0 &
 }
 
 
